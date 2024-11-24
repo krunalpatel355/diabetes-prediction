@@ -90,19 +90,6 @@ X.head()
 Y.tail()
 
 
-# ***To Prevent Data Leakage, Perform train-test split Before Scaling***<br>
-# <i>Why Scale After Train-Test Split?<br></i>
-# <b>Without Leakage:</b> Scaling involves adjusting feature values to a standard range (e.g., mean 0, standard deviation 1 for StandardScaler).<br>
-# If you scale before splitting, the scaler will "see" information from both the training and test sets.<br>
-# This means the scaler’s parameters (mean, standard deviation) are influenced by the entire dataset, <br>
-# including data that the model should not have access to during training.<br>
-# <b>With Leakage:</b> When you split the data first, the scaler only learns the parameters (mean, standard deviation) from the training set.<br>
-# Then, the test data is scaled with these parameters, ensuring that the test data remains unseen during training, <br>
-# preserving its role as unseen data for evaluating model performance.<br>
-# <b>Conclusion</b><br>
-# Scaling after splitting prevents data leakage and ensures a fair evaluation.<br>
-# It avoids contaminating the training process with information from the test set,<br>
-# resulting in a model that performs well on genuinely unseen data and is more likely to generalize effectively in real-world applications.
 
 # In[10]:
 
