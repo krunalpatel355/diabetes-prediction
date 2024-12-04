@@ -192,5 +192,116 @@ display(HTML(html_table))
 
 
 
+# In[11]:
+
+
+missing_bp_count = data['BloodPressure'].isna().sum()
+print(f"Remaining missing values in BloodPressure: {missing_bp_count}")
+# Find rows that originally had missing values and have now been filled
+filled_bp_data = data[data['BloodPressure'].notna()]
+print("Sample of filled BloodPressure values:\n", filled_bp_data[['BloodPressure']].head())
+# Find rows that originally had missing values and have now been filled
+filled_bp_data = data[data['BloodPressure'].notna()]
+print("Sample of filled BloodPressure values:\n", filled_bp_data[['BloodPressure']].head())
+
+#output after training the model for Linear Reg
+
+
+# In[12]:
+
+
+data.describe()
+
+
+# ***Data Visualization***
+
+# In[13]:
+
+
+plt.figure(figsize=(8, 4))
+sns.countplot(x='Outcome', data=data, palette='Set2', hue=None, legend=False)
+plt.show()
+#This graph shows the distribution of the people with diabetes versus those who are healthy
+
+
+# **Observing Outliers**
+
+# In[14]:
+
+
+plt.figure(figsize=(12, 12))
+for i, col in enumerate(['Pregnancies', 'Glucose', 'BMI', 'WaistToHipRatio','Age']):
+    plt.subplot(3, 2, i + 1)  # Adjusted to a 3x2 grid for six plots
+    sns.boxplot(x=col, data=data)
+    plt.title({col})  # adds titles to each plot
+
+plt.tight_layout() 
+plt.show()
+# BMI: High BMI outliers may represent individuals with obesity, relevant to health-related analyses.
+# WaistToHipRatio: High waist-to-hip ratio outliers may indicate central obesity, also important for understanding health risks.
+
+
+# Key Observations from Each Feature on Pair Plot:
+# Glucose:
+# Higher glucose levels are associated with diabetic cases (orange).
+# There’s a clear distinction between diabetic and non-diabetic cases, with diabetic cases concentrated at higher glucose values.
+# 
+# BMI (Body Mass Index):
+# Higher BMI values are also associated with diabetes.
+# There is a visible clustering of diabetic cases at higher BMI levels, indicating BMI as a significant factor for diabetes risk.
+# Like glucose, BMI shows a clear separation between diabetic and non-diabetic cases.
+# 
+# Age:
+# Older individuals tend to have a higher probability of diabetes.
+# Diabetic cases (orange) are more frequent in the older age range, suggesting age is also an influential factor.
+# However, the separation is not as distinct as with glucose or BMI.
+# 
+# Pregnancies:
+# Higher numbers of pregnancies show a slight association with diabetes, but this relationship is weaker.
+# There are diabetic cases across various pregnancy counts, but a slight increase in cases with more pregnancies is visible.
+# 
+# Blood Pressure:
+# Blood pressure does not show a strong correlation with diabetes.
+# 
+# Waist-to-Hip Ratio:
+# Shows some clustering of diabetic cases at higher ratios, but the separation is not as distinct as with glucose and BMI.
+# 
+# Family History:
+# There is little visible separation between diabetic and non-diabetic cases based on family history.This is due to the data structure, where its only indicating a binary outcome.
+# 
+# Summary of Insights:
+# Strong Predictors: Glucose and BMI are the strongest predictors of diabetes, as diabetic cases are clustered at higher values for these features.
+# Moderate Predictors: Age shows some association, with older individuals more likely to be diabetic. Waist-to-Hip Ratio also shows a slight increase in diabetic cases at higher values.
+# Weak Predictors: Blood Pressure, Family History, and Pregnancies show weaker associations with diabetes and may be less influential for prediction purposes.
+
+# In[16]:
+
+
+sns.pairplot(data=data_complete, hue='Outcome')
+plt.show()
+# Orange means diabetic, blue not diabetic
+
+
+# In[18]:
+
+
+plt.figure(figsize = (12,12))
+for i, col in enumerate(['Pregnancies', 'Glucose', 'BMI', 'WaistToHipRatio','Age']):
+    plt.subplot(3, 3, i + 1) 
+    sns.histplot(x=col, data=data_complete, kde = True)
+    plt.title(f'Hist Plot of {col}') 
+
+plt.tight_layout()  
+plt.show()
+
+#for example for pregnancies, values are decreasing as number of pregnancy increases
+#Glucose distribution is between 80 and 150
+#Bmi is roughly normal,centered around 30 which falls in the overweight to obese range.Many individuals fall in the overweight or obese range, which is often a risk factor for diabetes. The BMI distribution aligns with expectations for a population where obesity could contribute to diabetes prevalence.
+# WaistToHipRatio does not indicate a clear pattern, this feature alone may not provide strong prediction power to influence diabetes without combining with other feature
+#while Age is spread out across different age groups. peaks around 20 to 30 years old and 50-60
+
+
+# In[ ]:
+
 
 
