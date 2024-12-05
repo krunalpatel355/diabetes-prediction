@@ -1,1 +1,1 @@
-# diabetes-prediction
+# social-media-sentimental-analysis flask app
