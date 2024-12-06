@@ -1,5 +1,8 @@
-from app.app import app
+import subprocess
+import os
 
-if __name__ == "__main__":
-    # Run the application
-    app.run(debug=True, host="0.0.0.0", port=5000)
+# Define the path to app.py
+app_file = os.path.join('app', 'app.py')
+
+# Run the Streamlit app
+subprocess.run(['streamlit', 'run', app_file])
