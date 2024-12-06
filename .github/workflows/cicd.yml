@@ -42,7 +42,7 @@ jobs:
     - name: Push Docker image to DockerHub
       run: docker push krunal355/flask-app:latest
 
-  CD Pipeline - Deploy to EC2
+  # CD Pipeline - Deploy to EC2
   deploy:
     runs-on: self-hosted
     needs: build
