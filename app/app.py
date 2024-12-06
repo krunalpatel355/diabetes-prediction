@@ -1,185 +1,298 @@
-from flask import Flask, render_template, request, jsonify
-from datetime import datetime, UTC
-import random  # For demo dashboard data
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objs as go
-from typing import List, Optional, Dict, Union
-from dataclasses import dataclass, asdict
-from app.dashboard import DASHBOARD
-from app.ves import VES
-from app.search import search 
-from app.config.settings import Config
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Dec  2 15:54:30 2024
+
+@author: Hazel
+"""
+
+import pickle
+import streamlit as st
+from streamlit_option_menu import option_menu
+
+#loading the saved models
+
+diabetes_model = pickle.load(open('C:/Users/Hazel/Downloads/Multiple disease prediction system/saved models/diabetes_prediction_model.sav','rb'))
+
+heart_disease_model = pickle.load(open('C:/Users/Hazel/Downloads/Multiple disease prediction system/saved models/heart_disease_model.sav','rb'))
+
+parkinsons_model = pickle.load(open('C:/Users/Hazel/Downloads/Multiple disease prediction system/saved models/parkinsons_model.sav','rb'))
+
+#sidebar for navigation
+
+# Add custom CSS for blue gradient
+with st.sidebar:
+    selected = option_menu(
+        'Multiple Disease Prediction System',
+        ['Diabetes Prediction', 
+         'Heart Disease Prediction',
+         'Parkinsons Prediction'],
+        menu_icon='hospital-fill',
+        icons=['activity', 'heart', 'person'],
+        default_index=0,
+        styles={
+            "container": {"padding": "0!important", "background-color": "#f9f9f9"},
+            "nav-link": {
+                "font-size": "16px",
+                "text-align": "left",
+                "margin": "0px",
+                "--hover-color": "#eee",
+            },
+            "nav-link-selected": {
+                "background": "#1e90ff",  # Solid blue background
+                "color": "white",  # Text color for selected option
+            },
+        }
+    )
 
 
-app = Flask(__name__)
-
-
-@dataclass
-class SearchParameters:
-    """Class to hold search parameters"""
-    subreddits: List[str]
-    from_time: Optional[datetime] = None
-    to_time: Optional[datetime] = None
-    sort_types: List[str] = None
-    post_limit: Optional[int] = None
-    include_comments: bool = False
-    search_text: str = ""
-    comment_limit: int = 10
-
-
-
-@app.route('/')
-def index():
-    return render_template('index.html', active_page='search')
-
-@app.route('/get_initial_data', methods=['POST'])
-def get_initial_data():
-    data = request.get_json()
-    user_input = data.get('text') 
-    ves_instance = VES(user_input)
-    result_data = ves_instance.vector_search()
-
-    return jsonify(result_data)
-
-@app.route('/dashboard')
-def dashboard():
-    # Use search_id from a recent search or a default value
-    search_id = "8cba419b-aa5b-4e80-8c96-70b520efdc1b"  # You might want to manage this dynamically
     
-    # Initialize dashboard with search_id
-    dashboard_instance = DASHBOARD(search_id)
-    
-    # Get sentiment analysis results
-    mongo_uri = Config.MONGODB_URI  # Replace with your actual MongoDB URI
-    analyzer = dashboard_instance.get_sentiment_analyzer(mongo_uri)
-    
-    # Sentiment Analysis
-    sentiment_results = analyzer.perform_sentiment_analysis(search_id)
-    
-    # Segmentation Analysis
-    segmentation_results = analyzer.perform_segmentation_analysis(search_id)
+# Diabetes Prediction Page
+if selected == 'Diabetes Prediction':
 
-    # Prepare Sentiment Pie Chart
-    sentiment_pie_data = [
-        {'category': 'Positive', 'value': sentiment_results['overall']['positive_percentage']},
-        {'category': 'Neutral', 'value': sentiment_results['overall']['neutral_percentage']},
-        {'category': 'Negative', 'value': sentiment_results['overall']['negative_percentage']}
-    ]
-    
-    pie_chart = go.Figure(data=[go.Pie(
-        labels=[item['category'] for item in sentiment_pie_data],
-        values=[item['value'] for item in sentiment_pie_data],
-        hole=.3,
-        marker_colors=['green', 'gray', 'red']
-    )])
-    pie_chart_html = pie_chart.to_html(full_html=False)
+    # page title
+    st.title('Diabetes Prediction using ML')
 
-    # Prepare Cluster Visualization
-    cluster_data = []
-    for cluster in segmentation_results['clusters']:
-        cluster_data.append({
-            'cluster_id': cluster['cluster_id'],
-            'size': cluster['size'],
-            'top_terms': ', '.join(cluster['top_terms'][:5])
-        })
-    
-    # Create Cluster Size Pie Chart
-    cluster_pie_chart = go.Figure(data=[go.Pie(
-        labels=[f"Cluster {c['cluster_id']}" for c in cluster_data],
-        values=[c['size'] for c in cluster_data],
-        hole=.3
-    )])
-    cluster_pie_chart_html = cluster_pie_chart.to_html(full_html=False)
+    # getting the input data from the user
+    col1, col2, col3 = st.columns(3)
 
-    # Prepare Cluster Sunburst Chart (showing hierarchy)
-    sunburst_data = []
-    for cluster in segmentation_results['clusters']:
-        sunburst_data.append(dict(
-            ids=f"Cluster {cluster['cluster_id']}",
-            labels=f"Cluster {cluster['cluster_id']}",
-            parents="",
-            values=cluster['size']
-        ))
-        # Add top terms as children
-        for term in cluster['top_terms'][:3]:
-            sunburst_data.append(dict(
-                ids=f"Cluster {cluster['cluster_id']} - {term}",
-                labels=term,
-                parents=f"Cluster {cluster['cluster_id']}",
-                values=1
-            ))
-    
-    sunburst_chart = go.Figure(go.Sunburst(
-        ids=[d['ids'] for d in sunburst_data],
-        labels=[d['labels'] for d in sunburst_data],
-        parents=[d['parents'] for d in sunburst_data],
-        values=[d['values'] for d in sunburst_data]
-    ))
-    sunburst_chart_html = sunburst_chart.to_html(full_html=False)
+    with col1:
+        Pregnancies = st.text_input('Number of Pregnancies')
 
-    return render_template('dashboard.html', 
-                         active_page='dashboard',
-                         sentiment_results=sentiment_results,
-                         segmentation_results=segmentation_results,
-                         pie_chart_html=pie_chart_html,
-                         cluster_pie_chart_html=cluster_pie_chart_html,
-                         sunburst_chart_html=sunburst_chart_html)
+    with col2:
+        Glucose = st.text_input('Glucose Level')
+
+    with col3:
+        BloodPressure = st.text_input('Blood Pressure value')
+
+    with col1:
+        SkinThickness = st.text_input('Skin Thickness value')
+
+    with col2:
+        Insulin = st.text_input('Insulin Level')
+
+    with col3:
+        BMI = st.text_input('BMI value')
+
+    with col1:
+        FamilyHistory = st.text_input('Family History')
+
+    with col2:
+        Age = st.text_input('Age of the Person')
 
 
-@app.route('/simple_search', methods=['POST'])
-def simple_search():
+    # code for Prediction
+    diab_diagnosis = ''
+
+    # creating a button for Prediction
+
+if st.button('Diabetes Test Result'):
+
     try:
-        # Extract selected_buttons from request
-        selected_buttons = request.json.get('selected_buttons', [])
-        
-        # Initialize the search class with the selected_buttons
-        search_instance = search(selected_buttons)
-        
-        # Perform the simple search
-        results = search_instance.perform_simple_search()
-        print(results)
-        print(type(results))
-        return jsonify({"results": results})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Collect user input
+        user_input = [Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin,
+                      BMI, FamilyHistory, Age]
 
-@app.route('/advanced_search', methods=['POST'])
-def advanced_search():
-    try:
-        data = request.json
-        # Map input fields to SearchParameters dataclass fields
-        # params = {
-        #     "subreddits": data.get('selected_buttons', []),  # Rename topics to subreddits
-        #     "from_time": datetime.fromisoformat(data['from_time']) if 'from_time' in data else None,
-        #     "to_time": datetime.fromisoformat(data['to_time']) if 'to_time' in data else None,
-        #     "sort_types": data.get('post_types', []),  # Optional parameter
-        #     "post_limit": int(data.get('post_limit', 0)),
-        #     "include_comments": data.get('include_comments', 'no') == 'yes',
-        #     "search_text": data.get('search_text', ""),
-        # }
+        # Validate input: Check if all values are numbers and non-negative
+        user_input = [float(x) for x in user_input]
+        if any(x < 0 for x in user_input):
+            st.error("All input values must be non-negative numbers. Please correct your input.")
+        else:
+            # Predict diabetes outcome
+            diab_prediction = diabetes_model.predict([user_input])
+            diab_probabilities = diabetes_model.predict_proba([user_input])
+            prob_diabetic = diab_probabilities[0][1] * 100  # Probability of being diabetic
+            prob_not_diabetic = diab_probabilities[0][0] * 100  # Probability of not being diabetic
 
-        # print(params)
+            # Risk level classification based on clinical thresholds
+            def classify_risk_level(glucose, blood_pressure, bmi):
+                if glucose > 180 or blood_pressure > 140:
+                    return 'High Risk'
+                elif bmi > 30:
+                    return 'Moderate Risk'
+                else:
+                    return 'Low Risk'
 
-        parameters = SearchParameters(
-            subreddits=data.get('selected_buttons', []),
-            from_time=datetime.fromisoformat(data['from_time']) if 'from_time' in data else None,  # Added timezone info
-            to_time=datetime.fromisoformat(data['to_time']) if 'to_time' in data else None,
-            sort_types=data.get('post_types', []),
-            post_limit=int(data.get('post_limit', 0)),
-            include_comments=data.get('include_comments', False) == True,
-            search_text=data.get('search_text', ""),
-            comment_limit=10
-        )
-        # # Initialize the search class with advanced parameters
-        search_instance = search(parameters)
-        results = search_instance.perform_advance_search()
-        print(results)
-        print(type(results))
-        
-        return jsonify({"results": results})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            # Diagnosis and risk level
+            if diab_prediction[0] == 1:
+                risk_level = classify_risk_level(user_input[1], user_input[2], user_input[5])
+                diab_diagnosis = (
+                    f"The person is likely diabetic, please consult a doctor immediately. \n\n"
+                    f"Probability of being diabetic: {prob_diabetic:.2f}%\n"
+                    f"\nRisk Level: {risk_level}"
+                )
+            else:
+                diab_diagnosis = (
+                    f"The person is not likely diabetic. \n"
+                    f"Probability of not being diabetic: {prob_not_diabetic:.2f}%"
+                )
 
-if __name__ == '__main__':
-    app.run(debug=True)
+            # Display the result
+            st.success(diab_diagnosis)
+
+    except ValueError:
+        st.error("Invalid input. Please enter numeric values for all fields.")
+
+
+
+
+# Heart Disease Prediction Page
+if selected == 'Heart Disease Prediction':
+
+    # page title
+    st.title('Heart Disease Prediction using ML')
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        age = st.text_input('Age')
+
+    with col2:
+        sex = st.text_input('Sex')
+
+    with col3:
+        cp = st.text_input('Chest Pain types')
+
+    with col1:
+        trestbps = st.text_input('Resting Blood Pressure')
+
+    with col2:
+        chol = st.text_input('Serum Cholestoral in mg/dl')
+
+    with col3:
+        fbs = st.text_input('Fasting Blood Sugar > 120 mg/dl')
+
+    with col1:
+        restecg = st.text_input('Resting Electrocardiographic results')
+
+    with col2:
+        thalach = st.text_input('Maximum Heart Rate achieved')
+
+    with col3:
+        exang = st.text_input('Exercise Induced Angina')
+
+    with col1:
+        oldpeak = st.text_input('ST depression induced by exercise')
+
+    with col2:
+        slope = st.text_input('Slope of the peak exercise ST segment')
+
+    with col3:
+        ca = st.text_input('Major vessels colored by flourosopy')
+
+    with col1:
+        thal = st.text_input('thal: 0 = normal; 1 = fixed defect; 2 = reversable defect')
+
+    # code for Prediction
+    heart_diagnosis = ''
+
+    # creating a button for Prediction
+
+    if st.button('Heart Disease Test Result'):
+
+        user_input = [age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]
+
+        user_input = [float(x) for x in user_input]
+
+        heart_prediction = heart_disease_model.predict([user_input])
+
+        if heart_prediction[0] == 1:
+            heart_diagnosis = 'The person is likely having a heart disease, please consult a doctor'
+        else:
+            heart_diagnosis = 'The person is not likely having any heart disease'
+
+    st.success(heart_diagnosis)
+
+# Parkinson's Prediction Page
+if selected == "Parkinsons Prediction":
+
+    # page title
+    st.title("Parkinson's Disease Prediction using ML")
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        fo = st.text_input('MDVP:Fo(Hz)')
+
+    with col2:
+        fhi = st.text_input('MDVP:Fhi(Hz)')
+
+    with col3:
+        flo = st.text_input('MDVP:Flo(Hz)')
+
+    with col4:
+        Jitter_percent = st.text_input('MDVP:Jitter(%)')
+
+    with col5:
+        Jitter_Abs = st.text_input('MDVP:Jitter(Abs)')
+
+    with col1:
+        RAP = st.text_input('MDVP:RAP')
+
+    with col2:
+        PPQ = st.text_input('MDVP:PPQ')
+
+    with col3:
+        DDP = st.text_input('Jitter:DDP')
+
+    with col4:
+        Shimmer = st.text_input('MDVP:Shimmer')
+
+    with col5:
+        Shimmer_dB = st.text_input('MDVP:Shimmer(dB)')
+
+    with col1:
+        APQ3 = st.text_input('Shimmer:APQ3')
+
+    with col2:
+        APQ5 = st.text_input('Shimmer:APQ5')
+
+    with col3:
+        APQ = st.text_input('MDVP:APQ')
+
+    with col4:
+        DDA = st.text_input('Shimmer:DDA')
+
+    with col5:
+        NHR = st.text_input('NHR')
+
+    with col1:
+        HNR = st.text_input('HNR')
+
+    with col2:
+        RPDE = st.text_input('RPDE')
+
+    with col3:
+        DFA = st.text_input('DFA')
+
+    with col4:
+        spread1 = st.text_input('spread1')
+
+    with col5:
+        spread2 = st.text_input('spread2')
+
+    with col1:
+        D2 = st.text_input('D2')
+
+    with col2:
+        PPE = st.text_input('PPE')
+
+    # code for Prediction
+    parkinsons_diagnosis = ''
+
+    # creating a button for Prediction    
+    if st.button("Parkinson's Test Result"):
+
+        user_input = [fo, fhi, flo, Jitter_percent, Jitter_Abs,
+                      RAP, PPQ, DDP,Shimmer, Shimmer_dB, APQ3, APQ5,
+                      APQ, DDA, NHR, HNR, RPDE, DFA, spread1, spread2, D2, PPE]
+
+        user_input = [float(x) for x in user_input]
+
+        parkinsons_prediction = parkinsons_model.predict([user_input])
+
+        if parkinsons_prediction[0] == 1:
+            parkinsons_diagnosis = "The person has Parkinson's disease"
+        else:
+            parkinsons_diagnosis = "The person does not have Parkinson's disease"
+
+    st.success(parkinsons_diagnosis)
